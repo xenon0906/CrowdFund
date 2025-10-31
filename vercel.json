@@ -4,15 +4,9 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "regions": ["iad1", "sfo1", "pdx1", "gru1", "hnd1", "syd1", "cdg1", "lhr1", "fra1", "bom1", "sin1"],
   "functions": {
     "pages/api/**/*": {
-      "maxDuration": 10,
-      "memory": 512
-    },
-    "pages/**/*": {
-      "maxDuration": 30,
-      "memory": 1024
+      "maxDuration": 10
     }
   },
   "headers": [
