@@ -1,0 +1,34 @@
+# FundChain Robots Configuration
+# https://fundchain.vercel.app
+
+User-agent: *
+Allow: /
+Allow: /getting-started
+Allow: /how-it-works
+Allow: /create
+
+# Block API routes
+Disallow: /api/
+
+# Block internal paths
+Disallow: /_next/
+Disallow: /.next/
+
+# Sitemap
+Sitemap: https://fundchain.vercel.app/sitemap.xml
+
+# Crawl delay to prevent overload
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

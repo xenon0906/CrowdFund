@@ -1,0 +1,113 @@
+{
+  "name": "FundChain - Blockchain Crowdfunding",
+  "short_name": "FundChain",
+  "description": "Transparent blockchain-powered crowdfunding platform. Create campaigns, contribute funds, and vote on spending decisions.",
+  "categories": ["finance", "business", "productivity"],
+  "theme_color": "#6366F1",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "start_url": "/?source=pwa",
+  "id": "fundchain-app",
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "540x1200",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "FundChain Mobile View"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FundChain Desktop View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Campaign",
+      "short_name": "Create",
+      "description": "Start a new crowdfunding campaign",
+      "url": "/create?source=pwa",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Get Test ETH",
+      "short_name": "Get ETH",
+      "description": "Get free Sepolia test ETH",
+      "url": "/getting-started?source=pwa",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "View Campaigns",
+      "short_name": "Campaigns",
+      "description": "Browse all active campaigns",
+      "url": "/?source=pwa",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "features": [
+    "Cross Platform",
+    "Offline Capable",
+    "Blockchain Integration",
+    "MetaMask Support"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+fundchain",
+      "url": "/?campaign=%s"
+    }
+  ],
+  "share_target": {
+    "action": "/api/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "handle_links": "preferred",
+  "experimental": {
+    "scope_extensions": [
+      {
+        "origin": "https://eth-sepolia.g.alchemy.com"
+      }
+    ]
+  }
+}
