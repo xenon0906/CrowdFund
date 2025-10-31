@@ -8,6 +8,7 @@ import { useWeb3 } from '../hooks/useWeb3';
 import Link from 'next/link';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
+import { getCampaignMetadata } from '../utils/campaignStorage';
 
 const Home: React.FC = () => {
   const { factoryContract, getCampaignContract } = useWeb3();
@@ -58,6 +59,8 @@ const Home: React.FC = () => {
           if (!campaign) return null;
 
           const summary = await campaign.getSummary();
+          const metadata = getCampaignMetadata(address);
+
           return {
             address,
             minimumContribution: summary[0].toString(),
@@ -65,6 +68,8 @@ const Home: React.FC = () => {
             requestsCount: summary[2].toString(),
             approversCount: summary[3].toString(),
             manager: summary[4],
+            title: metadata?.title || `Campaign ${address.slice(0, 8)}...`,
+            description: metadata?.description || 'No description available for this campaign.',
           };
         } catch (error) {
           console.error(`Error loading campaign ${address}:`, error);
@@ -250,8 +255,6 @@ const Home: React.FC = () => {
               <CampaignCard
                 key={campaign.address}
                 {...campaign}
-                title={`Campaign ${index + 1}`}
-                description="Support this amazing project!"
                 index={index}
               />
             ))}

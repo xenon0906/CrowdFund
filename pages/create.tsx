@@ -14,6 +14,7 @@ import {
   validateAmount,
   sanitizeInput
 } from '../utils/validation';
+import { saveCampaignMetadata } from '../utils/campaignStorage';
 
 const CreateCampaign: React.FC = () => {
   const { account, factoryContract } = useWeb3();
@@ -70,13 +71,31 @@ const CreateCampaign: React.FC = () => {
       const tx = await factoryContract.createCampaign(formData.minimumContribution);
       toast.loading('Transaction submitted. Waiting for confirmation...', { id: loadingToast });
 
-      await tx.wait();
+      const receipt = await tx.wait();
 
-      toast.success('Campaign created successfully!', { id: loadingToast });
-      router.push('/');
+      // Get the newly created campaign address
+      const campaigns = await factoryContract.getDeployedCampaigns();
+      const newCampaignAddress = campaigns[campaigns.length - 1];
+
+      // Save metadata to localStorage
+      saveCampaignMetadata({
+        address: newCampaignAddress,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        createdAt: Date.now(),
+        createdBy: account,
+      });
+
+      toast.success('Campaign created successfully! 🎉', { id: loadingToast });
+
+      // Redirect to the new campaign page
+      setTimeout(() => {
+        router.push(`/campaigns/${newCampaignAddress}`);
+      }, 1000);
     } catch (error: any) {
       console.error('Error creating campaign:', error);
-      toast.error(error?.reason || 'Failed to create campaign', { id: loadingToast });
+      const errorMessage = error?.reason || error?.message || 'Failed to create campaign';
+      toast.error(errorMessage, { id: loadingToast });
     } finally {
       setIsLoading(false);
     }

@@ -95,6 +95,16 @@ const CampaignDetails: React.FC = () => {
       return;
     }
 
+    // Check minimum contribution
+    const contributionWei = ethers.parseEther(contributionAmount);
+    const minimumWei = BigInt(campaign.minimumContribution);
+
+    if (contributionWei < minimumWei) {
+      const minEth = ethers.formatEther(minimumWei);
+      toast.error(`Minimum contribution is ${minEth} ETH (${campaign.minimumContribution} Wei)`);
+      return;
+    }
+
     setIsContributing(true);
     const loadingToast = toast.loading('Processing contribution...');
 
@@ -103,18 +113,19 @@ const CampaignDetails: React.FC = () => {
       if (!campaignContract) throw new Error('Contract not loaded');
 
       const tx = await campaignContract.contribute({
-        value: ethers.parseEther(contributionAmount),
+        value: contributionWei,
       });
 
       toast.loading('Transaction submitted. Waiting for confirmation...', { id: loadingToast });
       await tx.wait();
 
-      toast.success('Contribution successful!', { id: loadingToast });
+      toast.success('Contribution successful! 🎉', { id: loadingToast });
       setContributionAmount('');
       loadCampaignDetails(); // Reload to update stats
     } catch (error: any) {
       console.error('Error contributing:', error);
-      toast.error(error?.reason || 'Failed to contribute', { id: loadingToast });
+      const errorMessage = error?.reason || error?.message || 'Failed to contribute';
+      toast.error(errorMessage, { id: loadingToast });
     } finally {
       setIsContributing(false);
     }
@@ -246,75 +257,87 @@ const CampaignDetails: React.FC = () => {
         <title>Campaign Details - FundChain</title>
         <meta name="description" content="View campaign details, contribute funds, and vote on spending requests" />
       </Head>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-2xl p-8 mb-8"
+        className="glass-card rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 md:mb-8"
       >
-        <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
           Campaign Details
         </h1>
 
+        {/* Manager Badge */}
+        {account?.toLowerCase() === campaign.manager?.toLowerCase() && (
+          <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 rounded">
+            <p className="text-sm font-semibold text-green-800">
+              ✓ You are the manager of this campaign
+            </p>
+          </div>
+        )}
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <FaEthereum className="text-2xl text-primary-500" />
+              <FaEthereum className="text-xl md:text-2xl text-primary-500" />
               <span className="text-xs text-gray-500">Balance</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{campaign.balance} ETH</p>
+            <p className="text-lg md:text-2xl font-bold text-gray-800 break-words">{campaign.balance} ETH</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <FaUsers className="text-2xl text-secondary-500" />
+              <FaUsers className="text-xl md:text-2xl text-secondary-500" />
               <span className="text-xs text-gray-500">Contributors</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{campaign.approversCount}</p>
+            <p className="text-lg md:text-2xl font-bold text-gray-800">{campaign.approversCount}</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <FaClipboardList className="text-2xl text-green-500" />
+              <FaClipboardList className="text-xl md:text-2xl text-green-500" />
               <span className="text-xs text-gray-500">Requests</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{campaign.requestsCount}</p>
+            <p className="text-lg md:text-2xl font-bold text-gray-800">{campaign.requestsCount}</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <HiSparkles className="text-2xl text-yellow-500" />
-              <span className="text-xs text-gray-500">Min. Contribution</span>
+              <HiSparkles className="text-xl md:text-2xl text-yellow-500" />
+              <span className="text-xs text-gray-500">Min. Contrib.</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{campaign.minimumContribution} Wei</p>
+            <p className="text-sm md:text-lg font-bold text-gray-800">{ethers.formatEther(campaign.minimumContribution)} ETH</p>
           </div>
         </div>
 
         {/* Contribution Form */}
-        <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Contribute to this Campaign</h3>
-          <div className="flex gap-4">
+        <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Contribute to this Campaign</h3>
+          <p className="text-xs md:text-sm text-gray-600 mb-3">
+            Minimum: {ethers.formatEther(campaign.minimumContribution)} ETH
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <input
               type="number"
               step="0.001"
               value={contributionAmount}
               onChange={(e) => setContributionAmount(e.target.value)}
               placeholder="Amount in ETH"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="flex-1 px-4 py-3 md:py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleContribute}
               disabled={isContributing || !account}
-              className="gradient-btn px-8"
+              className="gradient-btn px-6 md:px-8 py-3 text-base md:text-base whitespace-nowrap"
             >
-              {isContributing ? 'Contributing...' : 'Contribute'}
+              {isContributing ? 'Contributing...' : 'Contribute Now'}
             </motion.button>
           </div>
           {!account && (
-            <p className="text-sm text-gray-600 mt-2">Connect your wallet to contribute</p>
+            <p className="text-xs md:text-sm text-gray-600 mt-2">Connect your wallet to contribute</p>
           )}
         </div>
       </motion.div>
@@ -324,16 +347,16 @@ const CampaignDetails: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="glass-card rounded-2xl p-8"
+        className="glass-card rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8"
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Spending Requests</h2>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800">Spending Requests</h2>
           {account?.toLowerCase() === campaign.manager?.toLowerCase() && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowRequestForm(!showRequestForm)}
-              className="flex items-center space-x-2 gradient-btn"
+              className="flex items-center justify-center space-x-2 gradient-btn px-4 py-2 md:px-6 md:py-3 text-sm md:text-base w-full sm:w-auto"
             >
               <FaPlus />
               <span>New Request</span>
@@ -346,16 +369,16 @@ const CampaignDetails: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="bg-white rounded-xl p-6 mb-6"
+            className="bg-white rounded-xl p-4 md:p-6 mb-4 md:mb-6"
           >
-            <h3 className="text-lg font-semibold mb-4">Create New Request</h3>
-            <div className="space-y-4">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Create New Request</h3>
+            <div className="space-y-3 md:space-y-4">
               <input
                 type="text"
                 value={newRequest.description}
                 onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
                 placeholder="Request description"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
               />
               <input
                 type="number"
@@ -363,26 +386,26 @@ const CampaignDetails: React.FC = () => {
                 value={newRequest.amount}
                 onChange={(e) => setNewRequest({ ...newRequest, amount: e.target.value })}
                 placeholder="Amount in ETH"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
               />
               <input
                 type="text"
                 value={newRequest.recipient}
                 onChange={(e) => setNewRequest({ ...newRequest, recipient: e.target.value })}
                 placeholder="Recipient address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
               />
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <button
                   onClick={handleCreateRequest}
                   disabled={isCreatingRequest}
-                  className="gradient-btn flex-1"
+                  className="gradient-btn flex-1 py-3 text-base"
                 >
                   {isCreatingRequest ? 'Creating...' : 'Create Request'}
                 </button>
                 <button
                   onClick={() => setShowRequestForm(false)}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300"
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 text-base"
                 >
                   Cancel
                 </button>
@@ -393,66 +416,68 @@ const CampaignDetails: React.FC = () => {
 
         {/* Requests List */}
         {requests.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {requests.map((request, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`bg-white rounded-xl p-6 ${
+                className={`bg-white rounded-xl p-4 md:p-6 ${
                   request.complete ? 'opacity-75' : ''
                 }`}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-2">{request.description}</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">Amount:</span> {request.value} ETH
-                      </div>
-                      <div>
-                        <span className="font-medium">Recipient:</span>{' '}
-                        <span className="font-mono text-xs">
-                          {request.recipient.slice(0, 6)}...{request.recipient.slice(-4)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Approvals:</span> {request.approvalCount}/{campaign.approversCount}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">Status:</span>
+                <div className="mb-3 md:mb-4">
+                  <h4 className="font-semibold text-base md:text-lg mb-3">{request.description}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
+                    <div className="flex justify-between sm:block">
+                      <span className="font-medium">Amount:</span>
+                      <span className="sm:ml-1">{request.value} ETH</span>
+                    </div>
+                    <div className="flex justify-between sm:block">
+                      <span className="font-medium">Recipient:</span>{' '}
+                      <span className="font-mono text-xs">
+                        {request.recipient.slice(0, 6)}...{request.recipient.slice(-4)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between sm:block">
+                      <span className="font-medium">Approvals:</span>
+                      <span className="sm:ml-1">{request.approvalCount}/{campaign.approversCount}</span>
+                    </div>
+                    <div className="flex justify-between sm:block items-center">
+                      <span className="font-medium">Status:</span>
+                      <span className="sm:ml-1">
                         {request.complete ? (
-                          <span className="flex items-center text-green-600">
+                          <span className="inline-flex items-center text-green-600">
                             <FaCheckCircle className="mr-1" /> Complete
                           </span>
                         ) : (
-                          <span className="flex items-center text-yellow-600">
+                          <span className="inline-flex items-center text-yellow-600">
                             <FaTimesCircle className="mr-1" /> Pending
                           </span>
                         )}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {!request.complete && (
-                  <div className="flex gap-4 mt-4">
+                  <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-3 md:mt-4">
                     {account && (
                       <button
                         onClick={() => handleApproveRequest(index)}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        className="px-4 py-2.5 md:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm md:text-base font-medium"
                       >
-                        Approve
+                        ✓ Approve
                       </button>
                     )}
                     {account?.toLowerCase() === campaign.manager?.toLowerCase() &&
                       Number(request.approvalCount) > Number(campaign.approversCount) / 2 && (
                         <button
                           onClick={() => handleFinalizeRequest(index)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          className="px-4 py-2.5 md:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm md:text-base font-medium"
                         >
-                          Finalize
+                          → Finalize
                         </button>
                       )}
                   </div>
@@ -461,9 +486,12 @@ const CampaignDetails: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <FaClipboardList className="text-4xl text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No spending requests yet</p>
+          <div className="text-center py-8 md:py-12">
+            <FaClipboardList className="text-3xl md:text-4xl text-gray-300 mx-auto mb-3 md:mb-4" />
+            <p className="text-sm md:text-base text-gray-500">No spending requests yet</p>
+            {account?.toLowerCase() === campaign.manager?.toLowerCase() && (
+              <p className="text-xs md:text-sm text-gray-400 mt-2">Create your first request above</p>
+            )}
           </div>
         )}
       </motion.div>
